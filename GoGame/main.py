@@ -28,7 +28,7 @@ def main():
     run = True
     clock = pygame.time.Clock()
     board = Board()
-    board.turn = 'op1'
+    board.turn = 1
     b1 = button(WIN, (300, 760), "Pass")
     while run:
         clock.tick(FPS)
@@ -37,27 +37,30 @@ def main():
                 run = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if b1.collidepoint(pygame.mouse.get_pos()):
-                    if board.turn == 'op1':
+                    if board.turn == 1:
                         if not board.pass_op2:
                             print("End game")
                         else:
-                            board.turn = 'op2'
+                            board.turn = 2
                     else:
                         if board.pass_op1:
                             print("End game")
                         else:
-                            board.turn = 'op1'
+                            board.turn = 1
                 else:
-                    print(board.turn)
+                    print("Turn ", board.turn)
                     mouse_x, mouse_y = pygame.mouse.get_pos()
                     column = board.get_clicked_column(mouse_x)
                     row = board.get_clicked_row(mouse_y)
                     if board.is_ok_move(column, row):
+                        print("AAAAAAAAAAAA")
                         board.draw_circle(column, row, WIN)
-                        if board.turn == 'op1':
-                            board.turn = 'op2'
+                        if board.turn == 1:
+                            print("SSSS")
+                            board.turn = 2
                         else:
-                            board.turn = 'op1'
+                            print("DFDF")
+                            board.turn = 1
                 # pass
         board.draw_squares(WIN)
         pygame.display.update()

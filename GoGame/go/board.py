@@ -1,6 +1,8 @@
 import select
 
+import numpy as np
 import pygame
+from go.group import Group, Point
 from go.constants import WHITE, RED, BLUE, BLACK, ROWS, SQUARE_SIZE, WIDTH, HEIGHT
 
 
@@ -10,86 +12,117 @@ class Board:
                       [RED, 0, RED, 0, WHITE],
                       []]
         self.selected_piece = None
-        self.game_board = [['x', 'x', 'x', 'x', 'x', 'x'],
-                           ['x', 'x', 'x', 'x', 'x', 'x'],
-                           ['x', 'x', 'x', 'x', 'x', 'x'],
-                           ['x', 'x', 'x', 'x', 'x', 'x'],
-                           ['x', 'x', 'x', 'x', 'x', 'x'],
-                           ['x', 'x', 'x', 'x', 'x', 'x']
+        self.game_board = [[-1, -1, -1, -1, -1, -1],
+                           [-1, -1, -1, -1, -1, -1],
+                           [-1, -1, -1, -1, -1, -1],
+                           [-1, -1, -1, -1, -1, -1],
+                           [-1, -1, -1, -1, -1, -1],
+                           [-1, -1, -1, -1, -1, -1]
                            ]
-        self.players = ['op1', 'op2']
+        self.players = [1, 2]
         self.turn = ''
         self.pass_op1 = False
         self.pass_op2 = False
         self.capture_op1 = 0
         self.capture_op2 = 0
+        self.previously = []
+        self.groups = []
 
     def calculate_opponent(self, color):
-        if color == 'op1':
-            return 'op2'
-        elif color == 'op2':
-            return 'op1'
+        if color == 1:
+            return 2
+        elif color == 2:
+            return 1
 
-    def capture(self):
-        opponent = ''
-        for row in range(1, len(self.game_board) - 1):
-            for col in range(1, len(self.game_board) - 1):
-                if self.game_board[row][col] == 'op1' or self.game_board[row][col] == 'op2':
-                    opponent = self.calculate_opponent(self.game_board[row][col])
-                    if row != 0 and col != 0:
-                        if self.game_board[row + 1][col] == opponent and self.game_board[row][col - 1] == opponent and \
-                                self.game_board[row - 1][col] == opponent and self.game_board[row][col + 1] == opponent:
-                            self.game_board[row][col] = 'luat'
-                            if opponent == 'op1':
-                                self.capture_op1 += 1
-                                print(self.capture_op1)
-                            else:
-                                self.capture_op2 += 1
-                                print(self.capture_op2)
-        for col in range(1, len(self.game_board) - 1):
-            if self.game_board[0][col] == 'op1' or self.game_board[0][col] == 'op2':
-                opponent = self.calculate_opponent(self.game_board[0][col])
-                if self.game_board[1][col] == opponent and self.game_board[0][col - 1] == opponent and self.game_board[0][col + 1] == opponent:
-                    self.game_board[0][col] = 'luat'
-            if self.game_board[len(self.game_board)-1][col] == 'op1' or self.game_board[len(self.game_board)-1][col] == 'op2':
-                opponent = self.calculate_opponent(self.game_board[len(self.game_board)-1][col])
-                if self.game_board[len(self.game_board)-2][col] == opponent and self.game_board[len(self.game_board)-1][col - 1] == opponent and self.game_board[len(self.game_board)-1][col + 1] == opponent:
-                    self.game_board[len(self.game_board)-1][col] = 'luat'
-        for row in range(1, len(self.game_board) - 1):
-            if self.game_board[row][0] == 'op1' or self.game_board[row][0] == 'op2':
-                opponent = self.calculate_opponent(self.game_board[row][0])
-                if self.game_board[row + 1][0] == opponent and \
-                        self.game_board[row - 1][0] == opponent and self.game_board[row][1] == opponent:
-                    self.game_board[row][0] = 'luat'
-            if self.game_board[row][len(self.game_board)-1] == 'op1' or self.game_board[row][len(self.game_board)-1] == 'op2':
-                opponent = self.calculate_opponent(self.game_board[row][len(self.game_board)-1])
-                if self.game_board[row + 1][len(self.game_board)-1] == opponent and \
-                        self.game_board[row - 1][len(self.game_board)-1] == opponent and self.game_board[row][len(self.game_board)-2] == opponent:
-                    self.game_board[row][len(self.game_board)-1] = 'luat'
-        if self.game_board[0][0] == 'op1' or self.game_board[0][0] == 'op2':
-            opponent = self.calculate_opponent(self.game_board[0][0])
-            if self.game_board[0][1] == opponent and self.game_board[1][0] == opponent:
-                self.game_board[0][0] = 'luat'
+    def verify_if_exits(self, row, column, add_row,
+                        add_column):  # adaugam piesa la grupul din care face parte piesa de langa
+        if self.game_board[row][column] == self.game_board[add_row][add_column]:
+            self.unit_two_groups(row, column, add_row, add_column)
 
-        if self.game_board[0][len(self.game_board)-1] == 'op1' or self.game_board[0][len(self.game_board)-1] == 'op2':
-            opponent = self.calculate_opponent(self.game_board[0][len(self.game_board)-1])
-            if self.game_board[1][len(self.game_board)-1] == opponent and self.game_board[0][len(self.game_board)-2] == opponent:
-                self.game_board[0][len(self.game_board)-1] = 'luat'
+    def add_to_group(self, row, column):
+        point = Point(row, column)
+        group = Group(point, self.game_board[row][column], 4)  # cream un grup nou
+        self.groups.append(group)
+        if row != 0:
+            self.verify_if_exits(row - 1, column, row, column)  # verificam daca exista intr-un grup piesa de langa
+        if row != len(self.game_board) - 1:
+            self.verify_if_exits(row + 1, column, row, column)
+        if column != 0:
+            self.verify_if_exits(row, column - 1, row, column)
+        if column != len(self.game_board) - 1:
+            self.verify_if_exits(row, column + 1, row, column)
 
-        if self.game_board[len(self.game_board)-1][0] == 'op1' or self.game_board[len(self.game_board)-1][0] == 'op2':
-            opponent = self.calculate_opponent(self.game_board[len(self.game_board)-1][0])
-            if self.game_board[len(self.game_board)-1][1] == opponent and self.game_board[len(self.game_board)-2][0] == opponent:
-                self.game_board[len(self.game_board)-1][0] = 'luat'
+    def verify_if_unites_two_groups(self, row, column):  # unim 2 grupuri
+        if row != 0 and self.game_board[row - 1][column] == self.game_board[row][column]:
+            if column != len(self.game_board) - 1 and self.game_board[row][column] == self.game_board[row][column + 1]:
+                self.unit_two_groups(row - 1, column, row, column + 1)
+                self.verify_if_exits(row - 1, column, row, column)
+            if row != len(self.game_board) - 1 and self.game_board[row][column] == self.game_board[row + 1][column]:
+                self.unit_two_groups(row - 1, column, row + 1, column)
+                self.verify_if_exits(row - 1, column, row, column)
+            if column != 0 and self.game_board[row][column] == self.game_board[row][column - 1]:
+                self.unit_two_groups(row - 1, column, row, column - 1)
+                self.verify_if_exits(row - 1, column, row, column)
+        if column != len(self.game_board) - 1 and self.game_board[row][column + 1] == self.game_board[row][column]:
+            if row != len(self.game_board) - 1 and self.game_board[row][column] == self.game_board[row + 1][column]:
+                self.unit_two_groups(row, column + 1, row + 1, column)
+                self.verify_if_exits(row, column + 1, row, column)
+            if column != 0 and self.game_board[row][column] == self.game_board[row][column - 1]:
+                self.unit_two_groups(row, column + 1, row, column - 1)
+                self.verify_if_exits(row, column + 1, row, column)
+        if row != len(self.game_board) - 1 and self.game_board[row + 1][column] == self.game_board[row][column]:
+            if column != 0 and self.game_board[row][column] == self.game_board[row][column - 1]:
+                self.unit_two_groups(row + 1, column, row, column - 1)
+                self.verify_if_exits(row + 1, column, row, column)
 
-        if self.game_board[len(self.game_board)-1][len(self.game_board)-1] == 'op1' or self.game_board[len(self.game_board)-1][len(self.game_board)-1] == 'op2':
-            opponent = self.calculate_opponent(self.game_board[len(self.game_board)-1][len(self.game_board)-1])
-            if self.game_board[len(self.game_board) - 2][len(self.game_board)-1] == opponent and self.game_board[len(self.game_board)-1][len(self.game_board) - 2] == opponent:
-                self.game_board[len(self.game_board)-1][len(self.game_board)-1] = 'luat'
+    def unit_two_groups(self, row_group1, column_group1, row_group2, column_group2):
+        group2 = -1
+        index = -1
+        for j in self.groups:
+            for k in j.points:
+                if k.getX() == row_group1 and k.getY() == column_group1:
+                    for l in self.groups:
+                        for m in l.points:
+                            if m.getX() == row_group2 and m.getY() == column_group2:
+                                group2 = l.points
+                                index = self.groups.index(l)
+                    for point in group2:
+                        j.addPoint(point.getX(), point.getY())
+        self.groups.pop(index)
+
+    def calculate_group_liberty(self):
+        for group in self.groups:
+            liberty = 0
+            for point in group.points:
+                liberty += self.calculate_point_liberty(point.getX(), point.getY())
+            group.number_of_liberties = liberty
+
+    def calculate_point_liberty(self, row, column):
+        liberty = 0
+        if row != 0:
+            if self.game_board[row - 1][column] == -1:
+                liberty += 1
+        if column != 0:
+            if self.game_board[row][column - 1] == -1:
+                liberty += 1
+        if row != len(self.game_board) - 1:
+            if self.game_board[row + 1][column] == -1:
+                liberty += 1
+        if column != len(self.game_board) - 1:
+            if self.game_board[row][column + 1] == -1:
+                liberty += 1
+        return liberty
+
+    def capture_group(self):
+        for group in self.groups:
+            if group.number_of_liberties == 0:
+                for point in group.points:
+                    self.game_board[point.getX()][point.getY()] = -1
 
     def draw_squares(self, win):
-        for row in range(0, ROWS+1):
-            for col in range(0, ROWS+1):
-                if self.game_board[row][col] == 'luat':
+        for row in range(0, ROWS + 1):
+            for col in range(0, ROWS + 1):
+                if self.game_board[row][col] == -1:
                     pygame.draw.circle(win, BLACK,
                                        (col * SQUARE_SIZE + SQUARE_SIZE, row * SQUARE_SIZE + SQUARE_SIZE),
                                        40)
@@ -100,26 +133,16 @@ class Board:
                 # pygame.display.flip()
         for row in range(0, ROWS + 1):
             for col in range(0, ROWS + 1):
-                if self.game_board[row][col] == 'op1':
+                if self.game_board[row][col] == 1:
                     pygame.draw.circle(win, BLUE, (col * SQUARE_SIZE + SQUARE_SIZE, row * SQUARE_SIZE + SQUARE_SIZE),
                                        40)
                 else:
-                    if self.game_board[row][col] == 'op2':
+                    if self.game_board[row][col] == 2:
                         pygame.draw.circle(win, WHITE,
                                            (col * SQUARE_SIZE + SQUARE_SIZE, row * SQUARE_SIZE + SQUARE_SIZE),
                                            40)
                     # pygame.display.flip()
 
-        x_pos = 30
-        y_pos = 30
-        width = 50
-        height = 50
-        # for i in range(6):
-        # for j in range(6):
-        # pygame.draw.rect(win, RED, (x_pos*i, y_pos*j, width, height), 2)
-
-        # pygame.draw.line(win, RED, [i * WIDTH / 8, 30], [i * WIDTH / 8, HEIGHT], 5)
-        # pygame.draw.line(win, WHITE, [40, i * HEIGHT / 8], [WIDTH, i * HEIGHT / 8], 5)
     def get_clicked_column(self, x):
         for i in range(1, ROWS + 1):
             if x < i * WIDTH / (ROWS + 2) + SQUARE_SIZE / 2:
@@ -135,15 +158,55 @@ class Board:
         return ROWS
 
     def draw_circle(self, column, row, win):
-        if self.turn == 'op1':
-            self.game_board[row][column] = 'op1'
+        if self.turn == 1:
+            self.game_board[row][column] = 1
         else:
-            self.game_board[row][column] = 'op2'
-        self.capture()
+            self.game_board[row][column] = 2
+        #self.capture()
+        self.verify_if_unites_two_groups(row, column)
+        self.add_to_group(row, column)
+        self.calculate_group_liberty()
+        self.capture_group()
+        print("Aici incepe")
+        for j in self.groups:
+            # print(self.groups.index(j))
+            print("Liberty ", j.number_of_liberties, len(j.points))
+            for k in j.points:
+                print(k.getX())
+                print(k.getY())
+
     # pygame.draw.circle(win, BLUE, (column * SQUARE_SIZE + SQUARE_SIZE, row * SQUARE_SIZE + SQUARE_SIZE), 40)
     # pygame.display.flip()
+    def compare_matix(self, a, b):
+        find = False
+        for i in range(len(a)):
+            for j in range(len(b)):
+                if a[i][j] != b[i][j]:
+                    find = True
+        return find
 
     def is_ok_move(self, column, row):
-        if self.game_board[row][column] == 'x':
+        if self.game_board[row][column] != -1:
+            return False
+        else:
+            before_move = self.game_board
+            self.game_board[row][column] = self.turn
+            self.verify_if_unites_two_groups(row, column)
+            self.add_to_group(row, column)
+            self.calculate_group_liberty()
+            self.capture_group()
+            for i in self.previously:
+                x = np.array(i)
+                y = np.array(self.game_board)
+                comparison = x == y
+                if self.compare_matix(i, self.game_board):
+                    print(comparison)
+                    print("lllllll")
+                    self.game_board = before_move
+                    return False
+            self.previously.append(self.game_board)
             return True
-        return False
+
+        #if self.game_board[row][column] ==:
+         #   return True
+        #return False
