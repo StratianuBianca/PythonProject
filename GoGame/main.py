@@ -1,6 +1,7 @@
 import pygame
-from go.constants import WIDTH, HEIGHT, WHITE
+from go.constants import WIDTH, HEIGHT, WHITE, BLACK
 from go.board import Board
+
 pygame.init()
 
 FPS = 60
@@ -23,12 +24,39 @@ def button(screen, position, text):
     return screen.blit(text_render, (x, y))
 
 
-def main():
-
-    run = True
+def page1():
     clock = pygame.time.Clock()
     board = Board()
+    button1 = button(WIN, (250, 400), "Opponent")
+    button2 = button(WIN, (450, 400), "Computer")
+    running = True
+
+    while running:
+        clock.tick(FPS)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if button1.collidepoint(pygame.mouse.get_pos()):
+                    board.ai_activate = False
+                    game(board)
+                elif button2.collidepoint(pygame.mouse.get_pos()):
+                    board.ai_activate = True
+                    game(board)
+        pygame.display.update()
+
+
+def game(board):
+    #board = Board()
+    run = True
+    clock = pygame.time.Clock()
     board.turn = 1
+    WIN.fill(BLACK)
+    print(board.ai_activate)
     b1 = button(WIN, (300, 760), "Pass")
     while run:
         clock.tick(FPS)
@@ -38,7 +66,7 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if b1.collidepoint(pygame.mouse.get_pos()):
                     if board.turn == 1:
-                        if not board.pass_op2:
+                        if board.pass_op2:
                             print("End game")
                         else:
                             board.turn = 2
@@ -53,13 +81,15 @@ def main():
                     column = board.get_clicked_column(mouse_x)
                     row = board.get_clicked_row(mouse_y)
                     if board.is_ok_move(column, row):
-                        print("AAAAAAAAAAAA")
                         board.draw_circle(column, row, WIN)
-                        if board.turn == 1:
-                            print("SSSS")
+                        if board.turn == 1 and not board.ai_activate:
                             board.turn = 2
-                        else:
-                            print("DFDF")
+                        elif board.turn == 2:
+                            board.turn = 1
+                        if board.ai_activate and board.turn == 1:
+                            row, column = board.generateAI()
+                            if row == -1 and column == -1:
+                                board.pass_op2 = True
                             board.turn = 1
                 # pass
         board.draw_squares(WIN)
@@ -68,4 +98,5 @@ def main():
     pygame.quit()
 
 
-main()
+#game()
+page1()

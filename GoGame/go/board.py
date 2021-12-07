@@ -1,3 +1,4 @@
+import random
 import select
 
 import numpy as np
@@ -27,6 +28,7 @@ class Board:
         self.capture_op2 = 0
         self.previously = []
         self.groups = []
+        self.ai_activate = False
 
     def calculate_opponent(self, color):
         if color == 1:
@@ -81,14 +83,20 @@ class Board:
         for j in self.groups:
             for k in j.points:
                 if k.getX() == row_group1 and k.getY() == column_group1:
+                    find = False
                     for l in self.groups:
+                        group2 = l.points
+                        find = False
                         for m in l.points:
                             if m.getX() == row_group2 and m.getY() == column_group2:
-                                group2 = l.points
+                                #group2 = l.points
+                                find = True
                                 index = self.groups.index(l)
-                    for point in group2:
-                        j.addPoint(point.getX(), point.getY())
-        self.groups.pop(index)
+                    if find:
+                        for point in group2:
+                            j.addPoint(point.getX(), point.getY())
+        if index != -1:
+            self.groups.pop(index)
 
     def calculate_group_liberty(self):
         for group in self.groups:
@@ -114,10 +122,14 @@ class Board:
         return liberty
 
     def capture_group(self):
+        list_of_groups = []
         for group in self.groups:
             if group.number_of_liberties == 0:
+                list_of_groups.append(group)
                 for point in group.points:
                     self.game_board[point.getX()][point.getY()] = -1
+        for i in list_of_groups:
+            self.groups.pop(self.groups.index(i))
 
     def draw_squares(self, win):
         for row in range(0, ROWS + 1):
@@ -156,6 +168,19 @@ class Board:
                 print(i - 1)
                 return i - 1
         return ROWS
+
+    def generateAI(self):
+        self.turn = 2
+        row = random.randint(0, len(self.game_board)-1)
+        column = random.randint(0, len(self.game_board)-1)
+        if self.is_ok_move(column, row):
+            return row, column
+        for i in range(0, 4):
+            row = random.randint(0, len(self.game_board) - 1)
+            column = random.randint(0, len(self.game_board) - 1)
+            if self.is_ok_move(column, row):
+                return row, column
+        return -1, -1
 
     def draw_circle(self, column, row, win):
         if self.turn == 1:
@@ -196,14 +221,10 @@ class Board:
             self.calculate_group_liberty()
             self.capture_group()
             for i in self.previously:
-                x = np.array(i)
-                y = np.array(self.game_board)
-                comparison = x == y
                 if self.compare_matix(i, self.game_board):
-                    print(comparison)
-                    print("lllllll")
                     self.game_board = before_move
                     return False
+            self.game_board = before_move
             self.previously.append(self.game_board)
             return True
 
