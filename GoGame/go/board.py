@@ -136,6 +136,16 @@ class Board:
         for i in list_of_groups:
             self.groups.pop(self.groups.index(i))
 
+    def captureGroupReturnColor(self):
+        list_of_groups = []
+        color = -1
+        for group in self.groups:
+            if group.number_of_liberties == 0:
+                list_of_groups.append(group)
+                for point in group.points:
+                    color = self.game_board[point.getX()][point.getY()]
+        return color
+
     def floodFill(self, row, column, color, group):
         if self.game_board[row][column] != color:
             return
@@ -293,14 +303,17 @@ class Board:
         if self.game_board[row][column] != -1:
             return False
         else:
-            return True
+            #return True
             print("Inainte")
             before_move = copy.deepcopy(self.game_board)
             self.game_board[row][column] = self.turn
             self.verify_if_unites_two_groups(row, column)
             self.add_to_group(row, column)
             self.calculate_group_liberty()
-            self.capture_group()
+            color = self.captureGroupReturnColor()
+            if color == self.turn:
+                self.game_board = copy.deepcopy(before_move)
+                return False
             for i in self.previously:
                 if not self.compareMatix(i, self.game_board):
                     print(i)
@@ -316,7 +329,3 @@ class Board:
             self.game_board = copy.deepcopy(before_move)
             # self.previously.append(self.game_board)
             return True
-
-        # if self.game_board[row][column] ==:
-        #   return True
-        # return False
