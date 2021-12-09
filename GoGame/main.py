@@ -1,8 +1,9 @@
+import os
+
 import pygame
 import sys
 from go.constants import WIDTH, HEIGHT, WHITE, BLACK
 from go.board import Board
-
 
 sys.setrecursionlimit(2500)
 pygame.init()
@@ -12,10 +13,10 @@ FPS = 60
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 print(WIN)
 pygame.display.set_caption("Go Game")
+font = pygame.font.SysFont("Arial", 30)
 
 
 def button(screen, position, text):
-    font = pygame.font.SysFont("Arial", 30)
     text_render = font.render(text, 1, (255, 0, 0))
     x, y, w, h = text_render.get_rect()
     x, y = position
@@ -53,13 +54,53 @@ def page1():
         pygame.display.update()
 
 
+def end(board):
+    WIN.fill(BLACK)
+    line1 = ""
+    line2 = ""
+    if board.whiteScore > board.blackScore:
+        line1 = "1.White : " + str(board.whiteScore)
+        line2 = " 2.Black : " + str(board.blackScore)
+    else:
+        line2 = "2.White : " + str(board.whiteScore)
+        line1 = " 1.Black : " + str(board.blackScore)
+
+    line1 = font.render(line1, True, WHITE)
+    text_rect1 = line1.get_rect()
+    line2 = font.render(line2, True, WHITE)
+    text_rect2 = line2.get_rect()
+    text_rect1.center = (WIDTH // 2, HEIGHT // 2)
+    text_rect2.center = (WIDTH // 2, HEIGHT // 2 + 50)
+    clock = pygame.time.Clock()
+    WIN.blit(line1, text_rect1)
+    WIN.blit(line2, text_rect2)
+    button1 = button(WIN, (450, 700), "Close")
+    running = True
+
+    while running:
+        clock.tick(FPS)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if button1.collidepoint(pygame.mouse.get_pos()):
+                    pygame.quit()
+                    exit()
+        pygame.display.update()
+
+
 def game(board):
-    #board = Board()
+    pass1 = font.render('Player 1 pass', True, WHITE)
+    pass2 = font.render('Player 2 pass', True, WHITE)
     run = True
     clock = pygame.time.Clock()
     board.turn = 1
     WIN.fill(BLACK)
-    print(board.ai_activate)
     b1 = button(WIN, (300, 760), "Pass")
     while run:
         clock.tick(FPS)
@@ -69,26 +110,33 @@ def game(board):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if b1.collidepoint(pygame.mouse.get_pos()):
                     if board.turn == 1:
-                        if board.pass_op2:
-                            print("End game")
+                        if board.pass_op2 and board.previously_move_pass:
                             board.calculateScore()
-                            print(board.whiteScore)
-                            print(board.blackScore)
-                            print("End game")
+                            end(board)
                         else:
+                            board.previously_move_pass = True
                             board.pass_op1 = True
+                            WIN.blit(pass1, (600, 50))
+                            pygame.display.update()
+                            pygame.time.wait(500)
+                            pygame.draw.rect(WIN, BLACK, (600, 50, 700, 70))
+                            pygame.display.update()
                             board.turn = 2
                     else:
-                        if board.pass_op1:
-                            print("End game")
+                        if board.pass_op1 and board.previously_move_pass:
                             board.calculateScore()
-                            print(board.whiteScore)
-                            print(board.blackScore)
-                            print("End game")
+                            end(board)
                         else:
+                            board.previously_move_pass = True
                             board.pass_op2 = True
+                            WIN.blit(pass2, (600, 50))
+                            pygame.display.update()
+                            pygame.time.wait(500)
+                            pygame.draw.rect(WIN, BLACK, (600, 50, 700, 100))
+                            pygame.display.update()
                             board.turn = 1
                 else:
+                    board.previously_move_pass = False
                     print("Turn ", board.turn)
                     mouse_x, mouse_y = pygame.mouse.get_pos()
                     column = board.get_clicked_column(mouse_x)
@@ -104,12 +152,10 @@ def game(board):
                             if row == -1 and column == -1:
                                 board.pass_op2 = True
                             board.turn = 1
-                # pass
         board.draw_squares(WIN)
         pygame.display.update()
 
     pygame.quit()
 
 
-#game()
 page1()

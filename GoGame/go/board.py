@@ -33,6 +33,7 @@ class Board:
         self.empty_group = []
         self.blackScore = 0
         self.whiteScore = 0
+        self.previously_move_pass = False
 
     def calculate_opponent(self, color):
         if color == 1:
