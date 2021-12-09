@@ -150,7 +150,22 @@ def game(board):
                         if board.ai_activate and board.turn == 1:
                             row, column = board.generateAI()
                             if row == -1 and column == -1:
+                                print("pass")
                                 board.pass_op2 = True
+                                if board.pass_op1 and board.previously_move_pass:
+                                    board.calculateScore()
+                                    end(board)
+                                else:
+                                    board.previously_move_pass = True
+                                    board.pass_op2 = True
+                                    WIN.blit(pass2, (600, 50))
+                                    pygame.display.update()
+                                    pygame.time.wait(500)
+                                    pygame.draw.rect(WIN, BLACK, (600, 50, 700, 100))
+                                    pygame.display.update()
+                                    board.turn = 1
+                            else:
+                                board.draw_circle(column, row, WIN)
                             board.turn = 1
         board.draw_squares(WIN)
         pygame.display.update()
