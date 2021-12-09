@@ -1,9 +1,12 @@
 import pygame
+import sys
 from go.constants import WIDTH, HEIGHT, WHITE, BLACK
 from go.board import Board
 
-pygame.init()
 
+sys.setrecursionlimit(2500)
+pygame.init()
+print(sys.getrecursionlimit())
 FPS = 60
 
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -68,12 +71,22 @@ def game(board):
                     if board.turn == 1:
                         if board.pass_op2:
                             print("End game")
+                            board.calculateScore()
+                            print(board.whiteScore)
+                            print(board.blackScore)
+                            print("End game")
                         else:
+                            board.pass_op1 = True
                             board.turn = 2
                     else:
                         if board.pass_op1:
                             print("End game")
+                            board.calculateScore()
+                            print(board.whiteScore)
+                            print(board.blackScore)
+                            print("End game")
                         else:
+                            board.pass_op2 = True
                             board.turn = 1
                 else:
                     print("Turn ", board.turn)
