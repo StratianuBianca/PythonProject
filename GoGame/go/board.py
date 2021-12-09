@@ -126,39 +126,41 @@ class Board:
                 liberty += 1
         return liberty
 
-    def capture_group(self):
-        list_of_groups = []
+    def capture_group(self, color):
+        list_of_groups = set()
         for group in self.groups:
             if group.number_of_liberties == 0:
-                list_of_groups.append(group)
                 for point in group.points:
-                    self.game_board[point.getX()][point.getY()] = -1
+                    if self.game_board[point.getX()][point.getY()] != color:
+                        list_of_groups.add(group)
+                        self.game_board[point.getX()][point.getY()] = -1
         for i in list_of_groups:
             self.groups.pop(self.groups.index(i))
 
-    def captureGroupReturnColor(self):
+    def captureGroupColor(self, color_board):
         list_of_groups = []
-        color = -1
+        color = []
         for group in self.groups:
             if group.number_of_liberties == 0:
                 list_of_groups.append(group)
-                for point in group.points:
-                    color = self.game_board[point.getX()][point.getY()]
-        return color
-
-    def floodFill(self, row, column, color, group):
-        if self.game_board[row][column] != color:
-            return
-        point = Point(row, column)
-        group.points.append(point)
-        # if row != len(self.game_board)-1 and self.game_board[row+1][column] == color:
-        #   self.floodFill(row+1, column, color, group)
-        # if row != 0 and self.game_board[row-1][column] == color:
-        #   self.floodFill(row-1, column, color, group)
-        if column != len(self.game_board) - 1 and self.game_board[row][column + 1] == color:
-            self.floodFill(row, column + 1, color, group)
-        if column > 0 and self.game_board[row][column - 1] == color:
-            self.floodFill(row, column - 1, color, group)
+        if len(list_of_groups) == 0:
+            return -3
+        if len(list_of_groups) > 1:
+            for group in list_of_groups:
+                point = group.points[0]
+                color.append(self.game_board[point.getX()][point.getY()])
+            find = False
+            for i in color:
+                if i != color_board:
+                    find = True
+            if find is False:
+                return color_board
+            else:
+                return -3
+        for point in list_of_groups[0]:
+            if self.game_board[point.getX()][point.getY()] == color_board:
+                return color_board
+        return -3
 
     def isInGroup(self, row, column):
         point = Point(row, column)
@@ -195,14 +197,12 @@ class Board:
     def get_clicked_column(self, x):
         for i in range(1, ROWS + 1):
             if x < i * WIDTH / (ROWS + 2) + SQUARE_SIZE / 2:
-                #print(i - 1)
                 return i - 1
         return ROWS
 
     def get_clicked_row(self, y):
         for i in range(1, ROWS + 1):
             if y < i * HEIGHT / (ROWS + 2) + SQUARE_SIZE / 2:
-                #print(i - 1)
                 return i - 1
         return ROWS
 
@@ -228,8 +228,8 @@ class Board:
         self.verify_if_unites_two_groups(row, column)
         self.add_to_group(row, column)
         self.calculate_group_liberty()
-        self.capture_group()
-        print("Aici incepe")
+        self.capture_group(self.game_board[row][column])
+        #print("Aici incepe")
         #for j in self.groups:
             # print(self.groups.index(j))
             # print("Liberty ", j.number_of_liberties, len(j.points))
@@ -261,7 +261,6 @@ class Board:
                 else:
                     area_matrix[i][j] = 1
         empty_labels, num_empty_areas = ndimage.measurements.label(np.array(area_matrix))
-        print(empty_labels)
         for numberArea in range(1, num_empty_areas + 1):
             black = 0
             white = 0
@@ -310,21 +309,17 @@ class Board:
             self.verify_if_unites_two_groups(row, column)
             self.add_to_group(row, column)
             self.calculate_group_liberty()
-            color = self.captureGroupReturnColor()
-            if color == self.turn:
+            color = self.captureGroupColor(self.game_board[row][column])
+            if color == self.game_board[row][column]:
                 self.game_board = copy.deepcopy(before_move)
                 return False
             for i in self.previously:
                 if not self.compareMatix(i, self.game_board):
-                    print(i)
-                    print(len(self.previously))
-                    print(self.previously.index(i))
-                    print(self.game_board)
                     self.game_board = copy.deepcopy(before_move)
                     return False
             print("Dupa")
-            for i in self.previously:
-                print(i)
+            #for i in self.previously:
+            #    print(i)
             self.previously.append(self.game_board)
             self.game_board = copy.deepcopy(before_move)
             # self.previously.append(self.game_board)
