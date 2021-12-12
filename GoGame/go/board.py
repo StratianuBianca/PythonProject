@@ -1,11 +1,40 @@
 import copy
 import random
-import select
 from scipy import ndimage
 import numpy as np
 import pygame
 from go.group import Group, Point
 from go.constants import WHITE, RED, BLUE, BLACK, ROWS, SQUARE_SIZE, WIDTH, HEIGHT
+
+
+def calculate_opponent(color):
+    if color == 1:
+        return 2
+    elif color == 2:
+        return 1
+
+
+def compareMatrix(a, b):
+    find = False
+    for i in range(len(a)):
+        for j in range(len(b)):
+            if a[i][j] != b[i][j]:
+                find = True
+    return find
+
+
+def get_clicked_column(x):
+    for i in range(1, ROWS + 1):
+        if x < i * WIDTH / (ROWS + 2) + SQUARE_SIZE / 2:
+            return i - 1
+    return ROWS
+
+
+def get_clicked_row(y):
+    for i in range(1, ROWS + 1):
+        if y < i * HEIGHT / (ROWS + 2) + SQUARE_SIZE / 2:
+            return i - 1
+    return ROWS
 
 
 class Board:
@@ -34,12 +63,6 @@ class Board:
         self.blackScore = 0
         self.whiteScore = 0
         self.previously_move_pass = False
-
-    def calculate_opponent(self, color):
-        if color == 1:
-            return 2
-        elif color == 2:
-            return 1
 
     def verify_if_exits(self, row, column, add_row,
                         add_column):  # adaugam piesa la grupul din care face parte piesa de langa
@@ -89,14 +112,14 @@ class Board:
             for k in j.points:
                 if k.getX() == row_group1 and k.getY() == column_group1:
                     find = False
-                    for l in self.groups:
-                        group2 = l.points
+                    for a in self.groups:
+                        group2 = a.points
                         find = False
-                        for m in l.points:
+                        for m in a.points:
                             if m.getX() == row_group2 and m.getY() == column_group2:
                                 # group2 = l.points
                                 find = True
-                                index = self.groups.index(l)
+                                index = self.groups.index(a)
                     if find:
                         for point in group2:
                             j.addPoint(point.getX(), point.getY())
@@ -137,13 +160,13 @@ class Board:
         for i in list_of_groups:
             self.groups.pop(self.groups.index(i))
 
-    def captureGroupColor(self, color_board):
+    def capture_group_color(self, color_board):
         list_of_groups = []
         color = []
         for group in self.groups:
             if group.number_of_liberties == 0:
                 list_of_groups.append(group)
-        if len(list_of_groups) == 0:
+        if len(list_of_groups) <= 0:
             return -3
         if len(list_of_groups) > 1:
             for group in list_of_groups:
@@ -157,13 +180,12 @@ class Board:
                 return color_board
             else:
                 return -3
-        for point in list_of_groups[0]:
+        for point in list_of_groups[0].points:
             if self.game_board[point.getX()][point.getY()] == color_board:
                 return color_board
         return -3
 
-    def isInGroup(self, row, column):
-        point = Point(row, column)
+    def is_in_group(self, row, column):
         for group in self.empty_group:
             for point in group.points:
                 if point.getX() == row and point.getY() == column:
@@ -192,21 +214,8 @@ class Board:
                         pygame.draw.circle(win, WHITE,
                                            (col * SQUARE_SIZE + SQUARE_SIZE, row * SQUARE_SIZE + SQUARE_SIZE),
                                            40)
-                    # pygame.display.flip()
 
-    def get_clicked_column(self, x):
-        for i in range(1, ROWS + 1):
-            if x < i * WIDTH / (ROWS + 2) + SQUARE_SIZE / 2:
-                return i - 1
-        return ROWS
-
-    def get_clicked_row(self, y):
-        for i in range(1, ROWS + 1):
-            if y < i * HEIGHT / (ROWS + 2) + SQUARE_SIZE / 2:
-                return i - 1
-        return ROWS
-
-    def generateAI(self):
+    def generate_AI(self):
         self.turn = 2
         row = random.randint(0, len(self.game_board) - 1)
         column = random.randint(0, len(self.game_board) - 1)
@@ -219,40 +228,24 @@ class Board:
                 return row, column
         return -1, -1
 
-    def draw_circle(self, column, row, win):
+    def draw_circle(self, column, row):
         if self.turn == 1:
             self.game_board[row][column] = 1
         else:
             self.game_board[row][column] = 2
-        # self.capture()
         self.verify_if_unites_two_groups(row, column)
         self.add_to_group(row, column)
         self.calculate_group_liberty()
         self.capture_group(self.game_board[row][column])
-        #print("Aici incepe")
-        #for j in self.groups:
-            # print(self.groups.index(j))
-            # print("Liberty ", j.number_of_liberties, len(j.points))
-            #for k in j.points:
-             #   print(k.getX())
-              #  print(k.getY())
 
-    def returnIndexGroup(self, row, column):
+    def return_index_group(self, row, column):
         for i in self.groups:
             for j in i.points:
                 if j.getX == row and j.getY == column:
                     return self.groups.index(i)
         return -1
 
-    def compareMatix(self, a, b):
-        find = False
-        for i in range(len(a)):
-            for j in range(len(b)):
-                if a[i][j] != b[i][j]:
-                    find = True
-        return find
-
-    def calculateScore(self):
+    def calculate_score(self):
         area_matrix = copy.deepcopy(self.game_board)
         for i in range(0, len(self.game_board)):
             for j in range(0, len(self.game_board)):
@@ -269,7 +262,7 @@ class Board:
                 for j in range(0, len(self.game_board)):
                     if empty_labels[i][j] == numberArea:
                         number_of_neighbours += 1
-                        neighbours = self.calculateNeighbors(i, j)
+                        neighbours = self.calculate_neighbors(i, j)
                         for neighbour in neighbours:
                             if neighbour == 1:
                                 black += 1
@@ -286,7 +279,7 @@ class Board:
                 elif self.game_board[i][j] == 2:
                     self.whiteScore += 1
 
-    def calculateNeighbors(self, row, column):
+    def calculate_neighbors(self, row, column):
         neighbors = []
         if row != 0:
             neighbors.append(self.game_board[row - 1][column])
@@ -302,25 +295,21 @@ class Board:
         if self.game_board[row][column] != -1:
             return False
         else:
-            #return True
             print("Inainte")
             before_move = copy.deepcopy(self.game_board)
             self.game_board[row][column] = self.turn
             self.verify_if_unites_two_groups(row, column)
             self.add_to_group(row, column)
             self.calculate_group_liberty()
-            color = self.captureGroupColor(self.game_board[row][column])
+            color = self.capture_group_color(self.game_board[row][column])
             if color == self.game_board[row][column]:
                 self.game_board = copy.deepcopy(before_move)
                 return False
             for i in self.previously:
-                if not self.compareMatix(i, self.game_board):
+                if not compareMatrix(i, self.game_board):
                     self.game_board = copy.deepcopy(before_move)
                     return False
             print("Dupa")
-            #for i in self.previously:
-            #    print(i)
             self.previously.append(self.game_board)
             self.game_board = copy.deepcopy(before_move)
-            # self.previously.append(self.game_board)
             return True

@@ -1,7 +1,3 @@
-import pygame
-from go.constants import WHITE, RED, BLUE, BLACK, ROWS, SQUARE_SIZE, WIDTH, HEIGHT
-
-
 class Point(object):
     def __init__(self, x, y):
         self.x = x

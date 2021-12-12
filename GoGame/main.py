@@ -1,9 +1,7 @@
-import os
-
 import pygame
 import sys
 from go.constants import WIDTH, HEIGHT, WHITE, BLACK
-from go.board import Board
+from go.board import Board, get_clicked_column, get_clicked_row
 
 sys.setrecursionlimit(2500)
 pygame.init()
@@ -17,7 +15,7 @@ font = pygame.font.SysFont("Arial", 30)
 
 
 def button(screen, position, text):
-    text_render = font.render(text, 1, (255, 0, 0))
+    text_render = font.render(text, True, (255, 0, 0))
     x, y, w, h = text_render.get_rect()
     x, y = position
     pygame.draw.line(screen, (150, 150, 150), (x, y), (x + w, y), 5)
@@ -56,8 +54,6 @@ def page1():
 
 def end(board):
     WIN.fill(BLACK)
-    line1 = ""
-    line2 = ""
     if board.whiteScore > board.blackScore:
         line1 = "1.White : " + str(board.whiteScore)
         line2 = " 2.Black : " + str(board.blackScore)
@@ -111,7 +107,7 @@ def game(board):
                 if b1.collidepoint(pygame.mouse.get_pos()):
                     if board.turn == 1:
                         if board.pass_op2 and board.previously_move_pass:
-                            board.calculateScore()
+                            board.calculate_score()
                             end(board)
                         else:
                             board.previously_move_pass = True
@@ -124,7 +120,7 @@ def game(board):
                             board.turn = 2
                     else:
                         if board.pass_op1 and board.previously_move_pass:
-                            board.calculateScore()
+                            board.calculate_score()
                             end(board)
                         else:
                             board.previously_move_pass = True
@@ -139,21 +135,21 @@ def game(board):
                     board.previously_move_pass = False
                     print("Turn ", board.turn)
                     mouse_x, mouse_y = pygame.mouse.get_pos()
-                    column = board.get_clicked_column(mouse_x)
-                    row = board.get_clicked_row(mouse_y)
+                    column = get_clicked_column(mouse_x)
+                    row = get_clicked_row(mouse_y)
                     if board.is_ok_move(column, row):
-                        board.draw_circle(column, row, WIN)
+                        board.draw_circle(column, row)
                         if board.turn == 1 and not board.ai_activate:
                             board.turn = 2
                         elif board.turn == 2:
                             board.turn = 1
                         if board.ai_activate and board.turn == 1:
-                            row, column = board.generateAI()
+                            row, column = board.generate_AI()
                             if row == -1 and column == -1:
                                 print("pass")
                                 board.pass_op2 = True
                                 if board.pass_op1 and board.previously_move_pass:
-                                    board.calculateScore()
+                                    board.calculate_score()
                                     end(board)
                                 else:
                                     board.previously_move_pass = True
@@ -165,7 +161,7 @@ def game(board):
                                     pygame.display.update()
                                     board.turn = 1
                             else:
-                                board.draw_circle(column, row, WIN)
+                                board.draw_circle(column, row)
                             board.turn = 1
         board.draw_squares(WIN)
         pygame.display.update()
