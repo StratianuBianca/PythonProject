@@ -14,7 +14,7 @@ def calculate_opponent(color):
         return 1
 
 
-def compareMatrix(a, b):
+def compareMatrix(a, b):  # vedem daca doua matrici sunt egale
     find = False
     for i in range(len(a)):
         for j in range(len(b)):
@@ -69,7 +69,7 @@ class Board:
         if self.game_board[row][column] == self.game_board[add_row][add_column]:
             self.unit_two_groups(row, column, add_row, add_column)
 
-    def add_to_group(self, row, column):
+    def add_to_group(self, row, column):   # adaugam punctul intr-un grup
         point = Point(row, column)
         group = Group(point, self.game_board[row][column], 4)  # cream un grup nou
         self.groups.append(group)
@@ -82,7 +82,7 @@ class Board:
         if column != len(self.game_board) - 1:
             self.verify_if_exits(row, column + 1, row, column)
 
-    def verify_if_unites_two_groups(self, row, column):  # unim 2 grupuri
+    def verify_if_unites_two_groups(self, row, column):  # verificam daca putem sa unim doua grupuri
         if row != 0 and self.game_board[row - 1][column] == self.game_board[row][column]:
             if column != len(self.game_board) - 1 and self.game_board[row][column] == self.game_board[row][column + 1]:
                 self.unit_two_groups(row - 1, column, row, column + 1)
@@ -106,6 +106,7 @@ class Board:
                 self.verify_if_exits(row + 1, column, row, column)
 
     def unit_two_groups(self, row_group1, column_group1, row_group2, column_group2):
+        # unim doua grupuri de aceeasi culoare
         group2 = -1
         index = -1
         for j in self.groups:
@@ -126,14 +127,14 @@ class Board:
         if index != -1:
             self.groups.pop(index)
 
-    def calculate_group_liberty(self):
+    def calculate_group_liberty(self):  # verificam care este gradul de libertate al unui grup
         for group in self.groups:
             liberty = 0
             for point in group.points:
                 liberty += self.calculate_point_liberty(point.getX(), point.getY())
             group.number_of_liberties = liberty
 
-    def calculate_point_liberty(self, row, column):
+    def calculate_point_liberty(self, row, column):  # verificam care este gradul de libertate al unui punct
         liberty = 0
         if row != 0:
             if self.game_board[row - 1][column] == -1:
@@ -150,6 +151,7 @@ class Board:
         return liberty
 
     def capture_group(self, color):
+        # daca un grup nu mai are nici un grad de libertate inseamna ca a fost capturat de oponent
         list_of_groups = set()
         for group in self.groups:
             if group.number_of_liberties == 0:
@@ -161,6 +163,7 @@ class Board:
             self.groups.pop(self.groups.index(i))
 
     def capture_group_color(self, color_board):
+        # pentru regula ko, primul grup capturat este cel de culoare diferita
         list_of_groups = []
         color = []
         for group in self.groups:
@@ -185,14 +188,14 @@ class Board:
                 return color_board
         return -3
 
-    def is_in_group(self, row, column):
+    def is_in_group(self, row, column):  # vedem daca un punct exista intr-un grup
         for group in self.empty_group:
             for point in group.points:
                 if point.getX() == row and point.getY() == column:
                     return True
         return False
 
-    def draw_squares(self, win):
+    def draw_squares(self, win):  # desenam tabla
         for row in range(0, ROWS + 1):
             for col in range(0, ROWS + 1):
                 if self.game_board[row][col] == -1:
@@ -203,7 +206,6 @@ class Board:
             for col in range(0, ROWS):
                 pygame.draw.rect(win, RED, (
                     row * SQUARE_SIZE + SQUARE_SIZE, col * SQUARE_SIZE + SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE), 2)
-                # pygame.display.flip()
         for row in range(0, ROWS + 1):
             for col in range(0, ROWS + 1):
                 if self.game_board[row][col] == 1:
@@ -216,6 +218,7 @@ class Board:
                                            40)
 
     def generate_AI(self):
+        # AI care alege random pozitiile, iar daca a ales de 4 ori gresit, atunci da pass
         self.turn = 2
         row = random.randint(0, len(self.game_board) - 1)
         column = random.randint(0, len(self.game_board) - 1)
@@ -238,7 +241,7 @@ class Board:
         self.calculate_group_liberty()
         self.capture_group(self.game_board[row][column])
 
-    def return_index_group(self, row, column):
+    def return_index_group(self, row, column):  # calculam indexul din lista al unui anumit grup
         for i in self.groups:
             for j in i.points:
                 if j.getX == row and j.getY == column:
@@ -246,6 +249,7 @@ class Board:
         return -1
 
     def calculate_score(self):
+        # scorul este egal cu numarul de piese ale fiecarui jucator plus zonele care sunt capturate de jucatori
         area_matrix = copy.deepcopy(self.game_board)
         for i in range(0, len(self.game_board)):
             for j in range(0, len(self.game_board)):
@@ -279,7 +283,7 @@ class Board:
                 elif self.game_board[i][j] == 2:
                     self.whiteScore += 1
 
-    def calculate_neighbors(self, row, column):
+    def calculate_neighbors(self, row, column):  # vecinii sunt: sus, jos, stanga si dreapta
         neighbors = []
         if row != 0:
             neighbors.append(self.game_board[row - 1][column])
@@ -292,10 +296,14 @@ class Board:
         return neighbors
 
     def is_ok_move(self, column, row):
+        """
+        avem doua reguli "ko" si "suicide"
+        pentru ko nu avem voie sa repetam aceeleasi pozitii, sa avem aceeasi tabla de mai multe ori
+        pentru suicide nu avem voie ca jucatorul sa isi piarta propriile pietre
+        """
         if self.game_board[row][column] != -1:
             return False
         else:
-            print("Inainte")
             before_move = copy.deepcopy(self.game_board)
             self.game_board[row][column] = self.turn
             self.verify_if_unites_two_groups(row, column)
@@ -309,7 +317,6 @@ class Board:
                 if not compareMatrix(i, self.game_board):
                     self.game_board = copy.deepcopy(before_move)
                     return False
-            print("Dupa")
             self.previously.append(self.game_board)
             self.game_board = copy.deepcopy(before_move)
             return True

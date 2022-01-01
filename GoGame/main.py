@@ -26,7 +26,7 @@ def button(screen, position, text):
     return screen.blit(text_render, (x, y))
 
 
-def page1():
+def page1():  # pagina in care putem alege daca jucam cu un oponent sau cu computerul
     clock = pygame.time.Clock()
     board = Board()
     button1 = button(WIN, (250, 400), "Opponent")
@@ -53,13 +53,14 @@ def page1():
 
 
 def end(board):
+    # afisam scorul la sfarsit
     WIN.fill(BLACK)
     if board.whiteScore > board.blackScore:
         line1 = "1.White : " + str(board.whiteScore)
-        line2 = " 2.Black : " + str(board.blackScore)
+        line2 = " 2.Blue : " + str(board.blackScore)
     else:
         line2 = "2.White : " + str(board.whiteScore)
-        line1 = " 1.Black : " + str(board.blackScore)
+        line1 = " 1.Blue : " + str(board.blackScore)
 
     line1 = font.render(line1, True, WHITE)
     text_rect1 = line1.get_rect()
