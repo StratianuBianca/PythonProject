@@ -15,6 +15,13 @@ font = pygame.font.SysFont("Arial", 30)
 
 
 def button(screen, position, text):
+    """Draw a button
+
+        :param screen: pygame.display
+        :param position: (int, int)
+        :param text: str
+        :return: pygame.display.blit
+        """
     text_render = font.render(text, True, (255, 0, 0))
     x, y, w, h = text_render.get_rect()
     x, y = position
@@ -26,7 +33,10 @@ def button(screen, position, text):
     return screen.blit(text_render, (x, y))
 
 
-def page1():  # pagina in care putem alege daca jucam cu un oponent sau cu computerul
+def page1():
+    """
+    The page where we can choose whether to play with an opponent or with the computer.
+    """
     clock = pygame.time.Clock()
     board = Board()
     button1 = button(WIN, (250, 400), "Opponent")
@@ -53,7 +63,9 @@ def page1():  # pagina in care putem alege daca jucam cu un oponent sau cu compu
 
 
 def end(board):
-    # afisam scorul la sfarsit
+    """The page where the score will be displayed
+        :param board: Board()
+        """
     WIN.fill(BLACK)
     if board.whiteScore > board.blackScore:
         line1 = "1.White : " + str(board.whiteScore)
@@ -92,6 +104,9 @@ def end(board):
 
 
 def game(board):
+    """The page where play the game
+           :param board: Board()
+           """
     pass1 = font.render('Player 1 pass', True, WHITE)
     pass2 = font.render('Player 2 pass', True, WHITE)
     run = True

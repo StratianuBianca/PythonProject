@@ -8,13 +8,22 @@ from go.constants import WHITE, RED, BLUE, BLACK, ROWS, SQUARE_SIZE, WIDTH, HEIG
 
 
 def calculate_opponent(color):
+    """Calculate opponent for given data.
+        :param color: color of board
+                """
     if color == 1:
         return 2
     elif color == 2:
         return 1
 
 
-def compareMatrix(a, b):  # vedem daca doua matrici sunt egale
+def compareMatrix(a, b):
+    """Calculates whether two matrices are equal.
+
+        :param a: first matrix
+        :param b: second matrix
+        :return: boolean
+        """
     find = False
     for i in range(len(a)):
         for j in range(len(b)):
@@ -24,6 +33,11 @@ def compareMatrix(a, b):  # vedem daca doua matrici sunt egale
 
 
 def get_clicked_column(x):
+    """Calculates the clicked column
+
+        :param x: x clicked
+        :return: column
+        """
     for i in range(1, ROWS + 1):
         if x < i * WIDTH / (ROWS + 2) + SQUARE_SIZE / 2:
             return i - 1
@@ -31,6 +45,11 @@ def get_clicked_column(x):
 
 
 def get_clicked_row(y):
+    """Calculates the clicked row
+
+            :param y: y clicked
+            :return: row
+            """
     for i in range(1, ROWS + 1):
         if y < i * HEIGHT / (ROWS + 2) + SQUARE_SIZE / 2:
             return i - 1
@@ -39,6 +58,8 @@ def get_clicked_row(y):
 
 class Board:
     def __init__(self):
+        """Init class Board
+                """
         self.board = [[WHITE, 0, WHITE, 0, WHITE],
                       [RED, 0, RED, 0, WHITE],
                       []]
@@ -63,18 +84,47 @@ class Board:
         self.blackScore = 0
         self.whiteScore = 0
         self.previously_move_pass = False
+        """
+        :param board: list
+        :param selected_piece: optional
+        :param game_board: matrix, initially matrix
+        :param players: list, list of players
+        :param turn: str, turn of board
+        :param pass_op1: bool, check if player 1 presses pass
+        :param pass_op2: bool, check if player 2 pressed pass
+        :param capture_op1: int, capture score for player 1
+        :param capture_op2: int, capture score for player 2
+        :param previously: list, previously matrix for ko rule
+        :param groups: list, list of groups
+        :param ai_activate: bool, check if player choose AI
+        :param empty_group: list, list of empty groups
+        :param blackScore: int, score for player1
+        :param whiteScore: int, score for player2
+        :param previously_move_pass: bool, check if previously move was pass
+        """
 
     def verify_if_exits(self, row, column, add_row,
-                        add_column):  # adaugam piesa la grupul din care face parte piesa de langa
+                        add_column):
+        """Add the game piece to the group that the next piece belongs to
+
+                :param row: int, x
+                :param column: int, y
+                :param add_row: int, new x
+                :param add_column: int, new y
+                """
         if self.game_board[row][column] == self.game_board[add_row][add_column]:
             self.unit_two_groups(row, column, add_row, add_column)
 
-    def add_to_group(self, row, column):   # adaugam punctul intr-un grup
+    def add_to_group(self, row, column):
+        """Add the point in a group
+            :param row: int, x point
+            :param column: int, y point
+         """
         point = Point(row, column)
-        group = Group(point, self.game_board[row][column], 4)  # cream un grup nou
+        group = Group(point, self.game_board[row][column], 4)
         self.groups.append(group)
         if row != 0:
-            self.verify_if_exits(row - 1, column, row, column)  # verificam daca exista intr-un grup piesa de langa
+            self.verify_if_exits(row - 1, column, row, column)
         if row != len(self.game_board) - 1:
             self.verify_if_exits(row + 1, column, row, column)
         if column != 0:
@@ -82,7 +132,11 @@ class Board:
         if column != len(self.game_board) - 1:
             self.verify_if_exits(row, column + 1, row, column)
 
-    def verify_if_unites_two_groups(self, row, column):  # verificam daca putem sa unim doua grupuri
+    def verify_if_unites_two_groups(self, row, column):
+        """Check if we can join two groups
+            :param row: int, x point
+            :param column: int, y point
+        """
         if row != 0 and self.game_board[row - 1][column] == self.game_board[row][column]:
             if column != len(self.game_board) - 1 and self.game_board[row][column] == self.game_board[row][column + 1]:
                 self.unit_two_groups(row - 1, column, row, column + 1)
@@ -106,7 +160,12 @@ class Board:
                 self.verify_if_exits(row + 1, column, row, column)
 
     def unit_two_groups(self, row_group1, column_group1, row_group2, column_group2):
-        # unim doua grupuri de aceeasi culoare
+        """Join two groups of the same color
+           :param row_group1: int, x point for group 1
+           :param column_group1: int, y point for group 1
+           :param row_group2: int, x point for group 2
+           :param column_group2: int, y point for group 2
+         """
         group2 = -1
         index = -1
         for j in self.groups:
@@ -127,14 +186,22 @@ class Board:
         if index != -1:
             self.groups.pop(index)
 
-    def calculate_group_liberty(self):  # verificam care este gradul de libertate al unui grup
+    def calculate_group_liberty(self):
+        """Check the degree of freedom of a group
+            """
         for group in self.groups:
             liberty = 0
             for point in group.points:
                 liberty += self.calculate_point_liberty(point.getX(), point.getY())
             group.number_of_liberties = liberty
 
-    def calculate_point_liberty(self, row, column):  # verificam care este gradul de libertate al unui punct
+    def calculate_point_liberty(self, row, column):
+        """Check the degree of freedom of a point
+
+            :param row: int, row of point
+            :param column: int, column of point
+            :return: int, point liberty
+            """
         liberty = 0
         if row != 0:
             if self.game_board[row - 1][column] == -1:
@@ -151,7 +218,9 @@ class Board:
         return liberty
 
     def capture_group(self, color):
-        # daca un grup nu mai are nici un grad de libertate inseamna ca a fost capturat de oponent
+        """if a group no longer has any degree of freedom it means that it has been captured by the opponent
+           :param color: int, color of group
+                    """
         list_of_groups = set()
         for group in self.groups:
             if group.number_of_liberties == 0:
@@ -163,7 +232,11 @@ class Board:
             self.groups.pop(self.groups.index(i))
 
     def capture_group_color(self, color_board):
-        # pentru regula ko, primul grup capturat este cel de culoare diferita
+        """For the ko rule, the first group captured is the one of a different color
+
+            :param color_board: int, color of the board
+            :return: int
+            """
         list_of_groups = []
         color = []
         for group in self.groups:
@@ -188,14 +261,22 @@ class Board:
                 return color_board
         return -3
 
-    def is_in_group(self, row, column):  # vedem daca un punct exista intr-un grup
+    def is_in_group(self, row, column):
+        """See if a point exists in a group.
+            :param row: int, row of point
+            :param column: int, column of point
+            :return: bool
+            """
         for group in self.empty_group:
             for point in group.points:
                 if point.getX() == row and point.getY() == column:
                     return True
         return False
 
-    def draw_squares(self, win):  # desenam tabla
+    def draw_squares(self, win):
+        """Draw the table.
+            :param win: pygame.display
+            """
         for row in range(0, ROWS + 1):
             for col in range(0, ROWS + 1):
                 if self.game_board[row][col] == -1:
@@ -218,7 +299,9 @@ class Board:
                                            40)
 
     def generate_AI(self):
-        # AI care alege random pozitiile, iar daca a ales de 4 ori gresit, atunci da pass
+        """AI who randomly chooses the positions, and if he chose the wrong 4 times, then he passes.
+            :return: (row, column)
+            """
         self.turn = 2
         row = random.randint(0, len(self.game_board) - 1)
         column = random.randint(0, len(self.game_board) - 1)
@@ -232,6 +315,10 @@ class Board:
         return -1, -1
 
     def draw_circle(self, column, row):
+        """Check all the rules and then draw the board
+            :param column: int, column point
+            :param row: int, row point
+            """
         if self.turn == 1:
             self.game_board[row][column] = 1
         else:
@@ -241,7 +328,13 @@ class Board:
         self.calculate_group_liberty()
         self.capture_group(self.game_board[row][column])
 
-    def return_index_group(self, row, column):  # calculam indexul din lista al unui anumit grup
+    def return_index_group(self, row, column):
+        """Calculate the index from the list of a certain group.
+
+            :param row: int, row of point
+            :param column: int,  column of point
+            :return: int, index
+            """
         for i in self.groups:
             for j in i.points:
                 if j.getX == row and j.getY == column:
@@ -249,7 +342,8 @@ class Board:
         return -1
 
     def calculate_score(self):
-        # scorul este egal cu numarul de piese ale fiecarui jucator plus zonele care sunt capturate de jucatori
+        """The score is equal to the number of pieces of each player plus the areas that are captured by the players.
+            """
         area_matrix = copy.deepcopy(self.game_board)
         for i in range(0, len(self.game_board)):
             for j in range(0, len(self.game_board)):
@@ -283,7 +377,13 @@ class Board:
                 elif self.game_board[i][j] == 2:
                     self.whiteScore += 1
 
-    def calculate_neighbors(self, row, column):  # vecinii sunt: sus, jos, stanga si dreapta
+    def calculate_neighbors(self, row, column):
+        """The neighbors are: up, down, left and right
+
+            :param row: int, the row of point
+            :param column: int, the column of point
+            :return: list , list of neighbors
+            """
         neighbors = []
         if row != 0:
             neighbors.append(self.game_board[row - 1][column])
@@ -296,11 +396,14 @@ class Board:
         return neighbors
 
     def is_ok_move(self, column, row):
-        """
-        avem doua reguli "ko" si "suicide"
-        pentru ko nu avem voie sa repetam aceeleasi pozitii, sa avem aceeasi tabla de mai multe ori
-        pentru suicide nu avem voie ca jucatorul sa isi piarta propriile pietre
-        """
+        """We have two rules "ko" and "suicide".
+            For ko we are not allowed to repeat the same positions, to have the same board several times.
+            For suicide we are not allowed for the player to lose his own stones.
+
+            :param column: int, column of point
+            :param row: int, row of point
+            :return: bool
+            """
         if self.game_board[row][column] != -1:
             return False
         else:
